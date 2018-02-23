@@ -1,3 +1,4 @@
 # VandalismDetection
 
-## CS145 Group Project
+CS145 Group Project
+
