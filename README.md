@@ -12,9 +12,13 @@ CS145 Group Project
 
 ## Status and updating:
 > git status
+
 ...make edits...
+
 > git add -A
+
 > git commit -m "...insert message..."
+
 > git push origin my_branch
 
 ## Merging with master:
