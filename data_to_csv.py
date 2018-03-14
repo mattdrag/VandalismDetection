@@ -22,7 +22,7 @@ def join_csv_files():
 
 						#check if were still reading
 						if outputfile_line:
-							output2_line = outputfile_line + metafile_line + truthfile_line
+							output2_line = outputfile_line + ','+ metafile_line + ',' + truthfile_line
 							output2.write(output2_line + '\n')
 
 						#EOF
