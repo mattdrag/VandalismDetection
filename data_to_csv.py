@@ -2,24 +2,20 @@ import re
 import codecs
 from lxml import etree
 from glob import glob
-import pandas 
-#import feather
 import csv
 from tqdm import tqdm
 
-
+# Make global CSV writers for write_to_csv func
 trainwriter = csv.writer(codecs.open('./Intermediates/wdvc16_train.csv','w','utf8'))
 valwriter = csv.writer(codecs.open('./Intermediates/wdvc16_validation.csv','w','utf8'))
+#testwriter = csv.writer(codecs.open('./Intermediates/wdvc16_test.csv','w','utf8'))
 
 # Directories for writing to files
 train_dir = glob('./Train/')
 validation_dir = glob('./Validation/')
 test_dir = glob('./Test/')
 
-# Make global CSV writers for write_to_csv func
-#trainwriter = csv.writer('./Intermediates/wdvc16_train.csv')
-#valwriter = csv.writer('./Intermediates/wdvc16_validation.csv')
-#testwriter = csv.writer('./Intermediates/wdvc16_test.csv')
+
 
 
 
@@ -178,7 +174,7 @@ def main():
 	train_files = glob('./Train/*.xml')
 	trainwriter.writerow(init_line)
 	for xml_doc in train_files:
-		# first lets create the intermediate file TODO: which we are calling output.txt, and lets get all revisions from all files and combine them into one csv
+		# first lets create the intermediate file 
 		print ('Processing file: %s...' % xml_doc)
 		parse_pages(xml_doc, 0)
 	join_csv_files(0)
@@ -188,15 +184,10 @@ def main():
 	val_files = glob('./Validation/*.xml')
 	valwriter.writerow(init_line)
 	for xml_doc in val_files:
-		# first lets create the intermediate file TODO: which we are calling output.txt, and lets get all revisions from all files and combine them into one csv
+		# first lets create the intermediate file 
 		print ('Processing file: %s...' % xml_doc)
 		parse_pages(xml_doc, 1)
 	join_csv_files(1)
-
-	# We have one big csv file called output2.txt "./Intermediates/output2.txt"
-	# We want a data frame
-	# REVISION_ID	PAGE_TITLE	USER_NAME	USER_ID	USER_IP	REVISION_SESSION_ID	USER_COUNTRY_CODE	
-	# USER_CONTINENT_CODE	USER_TIME_ZONE	USER_REGION_CODE	USER_CITY_NAME	USER_COUNTY_NAME	REVISION_TAGS	ROLLBACK_REVERTED	UNDO_RESTORE_REVERTED
 
 
 if __name__ == "__main__":
