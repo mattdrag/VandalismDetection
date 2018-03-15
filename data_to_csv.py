@@ -5,9 +5,11 @@ from glob import glob
 import pandas 
 #import feather
 import csv
+from tqdm import tqdm
 
 
 trainwriter = csv.writer(codecs.open('./Intermediates/wdvc16_train.csv','w','utf8'))
+valwriter = csv.writer(codecs.open('./Intermediates/wdvc16_validation.csv','w','utf8'))
 
 # Directories for writing to files
 train_dir = glob('./Train/')
@@ -29,7 +31,7 @@ def join_csv_files(whichSet):
 		features_file = './Intermediates/wdvc16_train.csv'
 		meta_file = './Train/wdvc16_meta.csv'
 		truth_file = './Train/wdvc16_truth.csv'
-		joined_file = './Intermediates/wdvc16_train_joined.csv'
+		joined_file = './Train/wdvc16_train.csv'
 
 
 	#Validation
@@ -37,14 +39,14 @@ def join_csv_files(whichSet):
 		features_file = './Intermediates/wdvc16_validation.csv'
 		meta_file = './Validation/wdvc16_2016_03_meta.csv'
 		truth_file = './Validation/wdvc16_2016_03_truth.csv'
-		joined_file = './Intermediates/wdvc16_validation_joined.csv'
+		joined_file = './Validation/wdvc16_validation.csv'
 
 	#Test
 	else: #whichSet == 2
 		features_file = './Intermediates/wdvc16_test.csv'
-		meta_file = './Validation/wdvc16_2016_05_meta.csv'
-		truth_file = './Validation/wdvc16_2016_05_truth.csv'
-		joined_file = './Intermediates/wdvc16_test_joined.csv'
+		meta_file = './Test/wdvc16_2016_05_meta.csv'
+		truth_file = './Test/wdvc16_2016_05_truth.csv'
+		joined_file = './Test/wdvc16_test.csv'
 
 	#open the three files and write to an output
 	with codecs.open(features_file, 'r', 'utf8') as featuresfile:
@@ -142,38 +144,29 @@ def parse_pages(xmlfile, whichSet):
 	page_buffer = []
 	with codecs.open(xmlfile, 'r', 'utf8') as xml:
 		# Run loop until there are no more lines to be read
-		while True:
-			# Read a line and check that it was successfully read
-			line = xml.readline()
+		for line in tqdm(xml):
+			# Add line to page buffer
+			stripped_line = line.strip()
 
-			if line:
-				# Add line to page buffer
-				stripped_line = line.strip()
+			# We want to skip the beginning of the file
+			if stripped_line == "</siteinfo>":
+				# Clear everything up to the siteinfo end tag
+				page_buffer[:] = []
+				continue
 
-				# We want to skip the beginning of the file
-				if stripped_line == "</siteinfo>":
-					# Clear everything up to the siteinfo end tag
-					page_buffer[:] = []
-					continue
+			page_buffer.append(line.strip())
 
-				page_buffer.append(line.strip())
-
-				# Check if we've reached the end of the page
-				if stripped_line == "</page>":
-					# Process current page
-					process_page(page_buffer, whichSet)
-					# Clear buffer
-					page_buffer[:] = []
-
-			# Theres no more lines in the file
-			else:
-				break
+			# Check if we've reached the end of the page
+			if stripped_line == "</page>":
+				# Process current page
+				process_page(page_buffer, whichSet)
+				# Clear buffer
+				page_buffer[:] = []
 
 
 
 def main():
-	# TODO: Lets determine what categories were looking for in the xml
-	# For that reason I'm just going to leave this here:
+	# Wwhat categories were looking for in the xml
 	init_line = [ 'REVISION_ID', 'PAGE_TITLE', 'USER_NAME', 'USER_ID', 'USER_IP' ]
 
 	# Create a csv for each Train, validation, test
@@ -190,24 +183,20 @@ def main():
 		parse_pages(xml_doc, 0)
 	join_csv_files(0)
 
-	#TODO: Validation and test
+	#TODO: test
+	#Validation:
+	val_files = glob('./Validation/*.xml')
+	valwriter.writerow(init_line)
+	for xml_doc in val_files:
+		# first lets create the intermediate file TODO: which we are calling output.txt, and lets get all revisions from all files and combine them into one csv
+		print ('Processing file: %s...' % xml_doc)
+		parse_pages(xml_doc, 1)
+	join_csv_files(1)
 
 	# We have one big csv file called output2.txt "./Intermediates/output2.txt"
 	# We want a data frame
 	# REVISION_ID	PAGE_TITLE	USER_NAME	USER_ID	USER_IP	REVISION_SESSION_ID	USER_COUNTRY_CODE	
 	# USER_CONTINENT_CODE	USER_TIME_ZONE	USER_REGION_CODE	USER_CITY_NAME	USER_COUNTY_NAME	REVISION_TAGS	ROLLBACK_REVERTED	UNDO_RESTORE_REVERTED
-
-	df = pandas.read_csv("./Intermediates/wdvc16_train_joined.csv", dtype={"REVISION_ID": int, "PAGE_TITLE": object, "USER_NAME": object, \
-		"USER_ID": float, "USER_IP": object, "REVISION_SESSION_ID": int, \
-		"USER_COUNTRY_CODE": object, "USER_CONTINENT_CODE": object, "USER_TIME_ZONE": object, \
-		"USER_REGION_CODE": object, "USER_CITY_NAME": object, "USER_COUNTY_NAME": object,  \
-		"REVISION_TAGS": object, "ROLLBACK_REVERTED": object, "UNDO_RESTORE_REVERTED": object})
-
-
-	df.USER_ID.fillna(-1, inplace=True)
-	df.to_csv("./Train/wdvc16_train.csv")
-	#write_dir = "./DataFrames/data.feather"
-	#feather.write_dataframe(df, write_dir)
 
 
 if __name__ == "__main__":
