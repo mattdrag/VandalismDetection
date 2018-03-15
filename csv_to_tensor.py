@@ -104,12 +104,14 @@ def build_model_columns():
       rev_id,
       user_id,
       revision_session_id,
-      tf.feature_column.embedding_column(user_ip, dimension=8),
-      tf.feature_column.embedding_column(user_country_code, dimension=8),
-      tf.feature_column.embedding_column(user_continent_code, dimension=8),
-      tf.feature_column.embedding_column(user_time_zone, dimension=8),
-      tf.feature_column.embedding_column(user_region_code, dimension=8),
-      tf.feature_column.embedding_column(user_city_name, dimension=8),
+      tf.feature_column.indicator_column(pg_title),
+      tf.feature_column.indicator_column(user_name),
+      tf.feature_column.indicator_column(user_ip),
+      tf.feature_column.indicator_column(user_country_code),
+      tf.feature_column.indicator_column(user_continent_code),
+      tf.feature_column.indicator_column(user_time_zone),
+      tf.feature_column.indicator_column(user_region_code),
+      tf.feature_column.indicator_column(user_city_name),
   ]
 
   return wide_columns, deep_columns
