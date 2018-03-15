@@ -10,7 +10,7 @@ outputFile = codecs.open("./Intermediates/output.txt", 'w', 'utf8')
 
 
 def join_csv_files():
-	# just go ahead and nest em bc idgaf
+	# Open all 3 files and join them
 	with codecs.open("./Intermediates/output.txt", 'r', 'utf8') as outputfile:
 		with codecs.open("./test_data/wdvc16_meta.csv.001", 'r', 'utf8') as metafile:
 			with codecs.open("./test_data/wdvc16_truth.csv.001", 'r', 'utf8') as truthfile:
@@ -18,12 +18,19 @@ def join_csv_files():
 					while True:
 						outputfile_line = outputfile.readline().strip()
 						metafile_line = metafile.readline().strip()
+						# We dont need Revision ID
+						meta_pos = metafile_line.find(',')
+						metafile_line_id_removed = metafile_line[meta_pos:]
+
 						truthfile_line = truthfile.readline().strip()
+						# We dont need Revision ID
+						truth_pos = truthfile_line.find(',')
+						truthfile_line_id_removed = truthfile_line[truth_pos:]
 
 						#check if were still reading
 						if outputfile_line:
-							output2_line = outputfile_line + ','+ metafile_line + ',' + truthfile_line
-							output2.write(output2_line + '\n')
+							output2_line = outputfile_line + ','+ metafile_line_id_removed + ',' + truthfile_line_id_removed + '\n'
+							output2.write(output2_line)
 
 						#EOF
 						else:
@@ -36,6 +43,11 @@ def write_to_csv(data):
 	csv_formatted_n = csv_formatted + '\n'
 	outputFile.write(csv_formatted_n)
 
+def is_none(s):
+    if s is None:
+        return ''
+    else:
+        return s.text
 
 
 def process_page(page):
@@ -44,12 +56,33 @@ def process_page(page):
 	# A page is a list of lines
 	tree = etree.fromstring(''.join(page))
 
+	# Get the page of the revision
+	page_title = is_none(tree.find('title'))
+
 	# This is where we actually get the data we are looking for and extract it
 	# Grab info for every revision
 	for revision in tree.xpath('./revision'):
-		rev_ID = revision.find('id').text
-		rev_time = revision.find('timestamp').text
-		full_list = [ rev_ID, rev_time ]
+		# Get revision id and title
+		rev_ID = is_none(revision.find('id'))
+
+		# Get user info
+		rev_contributor = revision.find('contributor')
+		username = is_none(rev_contributor.find('username'))
+		# If theres no username, then they only have an ip address.
+		if username is '':
+			user_name = ''
+			user_id = ''
+			user_ip = rev_contributor.find('ip').text
+
+		# If theres a username, then they have username and id.
+		else:
+			user_name = is_none(rev_contributor.find('username'))
+			user_id = rev_contributor.find('id').text
+			user_ip = ''
+
+
+		#'REVISION_ID,PAGE_TITLE,USER_NAME,USER_ID,USER_IP,\n'
+		full_list = [ rev_ID, page_title, user_name, user_id, user_ip  ]
 		# Write to csv file
 		write_to_csv(full_list)
 
@@ -81,7 +114,7 @@ def parse_pages(xmlfile):
 				# Check if we've reached the end of the page
 				if stripped_line == "</page>":
 					# Process current page
-					print('calling process_page')
+					print('process page')
 					process_page(page_buffer)
 					# Clear buffer
 					page_buffer[:] = []
@@ -100,12 +133,12 @@ def main():
 
 	# TODO: Lets determine what categories were looking for in the xml
 	# For that reason I'm just going to leave this here:
-	init_line = 'REVISION_ID,REVISION_TIME\n'
+	init_line = 'REVISION_ID,PAGE_TITLE,USER_NAME,USER_ID,USER_IP,\n'
 	outputFile.write(init_line)
 
 	for xml_doc in test_xml_docs:
 		# first lets create the intermediate file TODO: which we are calling output.txt, and lets get all revisions from all files and combine them into one csv
-		print ('processing file %s...' % xml_doc)
+		print ('Processing file: %s...' % xml_doc)
 		parse_pages(xml_doc)
 
 	outputFile.close()
