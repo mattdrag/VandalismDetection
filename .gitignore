@@ -1,0 +1,4 @@
+# ignore the file literally named foo[01].txt
+/Train/*.xml
+/Train/*.csv
+/Train/*.xml
