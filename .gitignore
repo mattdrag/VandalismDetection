@@ -1,4 +1,14 @@
-# ignore the file literally named foo[01].txt
+# gitignore
 /Train/*.xml
 /Train/*.csv
-/Train/*.xml
+
+/Validation/*.xml
+/Validation/*.csv
+
+/Test/*.xml
+/Test/*.csv
+
+/Intermediates/*.xml
+/Intermediates/*.csv
+
+/models/*
