@@ -9,21 +9,22 @@ import sys
 
 import tensorflow as tf
 
-#REVISION_ID,PAGE_TITLE,USER_NAME,USER_ID,USER_IP,REVISION_SESSION_ID,USER_COUNTRY_CODE,USER_CONTINENT_CODE,USER_TIME_ZONE,USER_REGION_CODE,USER_CITY_NAME,USER_COUNTY_NAME,REVISION_TAGS,ROLLBACK_REVERTED,UNDO_RESTORE_REVERTED
+
+#[ 'REVISION_ID', 'IS_ANON', 'USER_NAME', 'USER_ID', 'USER_IP_1', 'USER_IP_2', 'USER_IP_3', 'USER_IP_4', ],REVISION_SESSION_ID,USER_COUNTRY_CODE,USER_CONTINENT_CODE,USER_TIME_ZONE,USER_REGION_CODE,USER_CITY_NAME,USER_COUNTY_NAME,REVISION_TAGS,ROLLBACK_REVERTED,UNDO_RESTORE_REVERTED
 
 #features - 'rev_id', 'pg_title', 'user_name', 'user_id', 'user_ip',  'revision_session_id', 'user_country_code', 'user_continent_code', 'user_time_zone', 'user_region_code',
 #			'user_city_name'
 #label - rollback_reverted
 
 _CSV_COLUMNS = [
-    'rev_id', 'pg_title', 'user_name', 'user_id', 'user_ip',
+    'rev_id', 'is_anon', 'user_name', 'user_id', 'user_ip_1', 'user_ip_2', 'user_ip_3', 'user_ip_4',
     'revision_session_id', 'user_country_code', 'user_continent_code', 'user_time_zone', 'user_region_code',
     'user_city_name', 'user_county_name', 'revision_tags', 'rollback_reverted',
     'undo_restore_reverted'
 ]
 
-_CSV_COLUMN_DEFAULTS = [[0], [''], [''], [0], [''], [0], [''], [''], [''], [''],
-                        [''], [''], [''], [''], ['']]
+_CSV_COLUMN_DEFAULTS = [[''], [''], [''], [''], [''], [''], [''], [''], [''], [''],
+                        [''], [''], [''], [''], [''], [''], [''], ['']]
 
 parser = argparse.ArgumentParser()
 
@@ -40,7 +41,7 @@ parser.add_argument(
     '--train_epochs', type=int, default=2, help='Number of training epochs.')
 
 parser.add_argument(
-    '--epochs_per_eval', type=int, default=1,
+    '--epochs_per_eval', type=int, default=2,
     help='The number of training epochs to run between evaluations.')
 
 parser.add_argument(
@@ -65,15 +66,11 @@ _NUM_EXAMPLES = {
 def build_model_columns():
   """Builds a set of wide and deep feature columns."""
   # Continuous columns
-  rev_id = tf.feature_column.numeric_column('rev_id')
-  user_id = tf.feature_column.numeric_column('user_id')
-  revision_session_id = tf.feature_column.numeric_column('revision_session_id')
+  user_id = tf.feature_column.categorical_column_with_hash_bucket(
+      'user_id', hash_bucket_size=1000)
+  revision_session_id = tf.feature_column.categorical_column_with_hash_bucket(
+      'revision_session_id', hash_bucket_size=1000)
 
-  # To show an example of hashing:
-  pg_title = tf.feature_column.categorical_column_with_hash_bucket(
-      'pg_title', hash_bucket_size=1000)
-  user_name = tf.feature_column.categorical_column_with_hash_bucket(
-      'user_name', hash_bucket_size=1000)
   user_ip = tf.feature_column.categorical_column_with_hash_bucket(
       'user_ip', hash_bucket_size=1000)
   user_country_code = tf.feature_column.categorical_column_with_hash_bucket(
@@ -88,28 +85,14 @@ def build_model_columns():
       'user_city_name', hash_bucket_size=1000)
 
   # Wide columns and deep columns.
-  base_columns = [
-      pg_title, user_name, user_ip, user_country_code, user_continent_code,
-      user_time_zone, user_region_code, user_city_name
-  ]
+  base_columns = [ user_ip ]
 
-  crossed_columns = [
-      tf.feature_column.crossed_column(
-          ['pg_title', 'user_name'], hash_bucket_size=1000),
-  ]
-
-  wide_columns = base_columns + crossed_columns
+  wide_columns = base_columns
 
   deep_columns = [
-      rev_id,
       user_id,
       revision_session_id,
-      tf.feature_column.embedding_column(user_ip, dimension=8),
-      tf.feature_column.embedding_column(user_country_code, dimension=8),
-      tf.feature_column.embedding_column(user_continent_code, dimension=8),
-      tf.feature_column.embedding_column(user_time_zone, dimension=8),
-      tf.feature_column.embedding_column(user_region_code, dimension=8),
-      tf.feature_column.embedding_column(user_city_name, dimension=8),
+      tf.feature_column.indicator_column(user_ip),
   ]
 
   return wide_columns, deep_columns
