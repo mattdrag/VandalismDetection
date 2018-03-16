@@ -29,7 +29,7 @@ _CSV_COLUMN_DEFAULTS = [[''], [''], [''], [''], [''], [''], [''], [''], [''], ['
 parser = argparse.ArgumentParser()
 
 parser.add_argument(
-    '--model_dir', type=str, default='./models',
+    '--model_dir', type=str, default='./tf_models',
     help='Base directory for the model.')
 
 #Gachibass
@@ -48,16 +48,22 @@ parser.add_argument(
     '--batch_size', type=int, default=40, help='Number of examples per batch.')
 
 parser.add_argument(
-    '--train_data', type=str, default='./Train/wdvc16_train.csv',
+    '--train_data', type=str, default='./Train/wdvc16_train_no_header.csv',
     help='Path to the training data.')
 
 parser.add_argument(
-    '--test_data', type=str, default='./Validation/wdvc16_validation.csv',
+    '--test_data', type=str, default='./Validation/wdvc16_validation_no_header.csv',
     help='Path to the test data.')
 
+
+# Use pandas for useful information about csv file, such as how many rows and how many unique entries in a col
+df = pandas.read_csv('./Train/wdvc16_train_no_header.csv', names=_CSV_COLUMNS )
+df2 = pandas.read_csv('./Validation/wdvc16_validation_no_header.csv', names=_CSV_COLUMNS )
+
+
 _NUM_EXAMPLES = {
-    'train': 9335817,
-    'validation': 7224770,
+    'train': df.shape[0],
+    'validation': df2.shape[0],
 }
 
 
@@ -67,8 +73,6 @@ _NUM_EXAMPLES = {
 def build_model_columns():
   """Builds a set of wide and deep feature columns."""
   # Continuous columns
-
-  df = pandas.read_csv('./Train/wdvc16_train.csv', names=_CSV_COLUMNS )
 
   is_anon = tf.feature_column.categorical_column_with_vocabulary_list(
       'is_anon', ['T', 'F'])
