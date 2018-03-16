@@ -66,7 +66,6 @@ _NUM_EXAMPLES = {
     'validation': df2.shape[0],
 }
 
-
 #features -     'is_anon', 'user_id', 'user_ip_1', 'user_ip_2', 'user_ip_3', 'user_ip_4',
 #     'user_country_code', 'user_continent_code', 'user_time_zone', 'user_region_code',
 #    'user_city_name', 'user_county_name', 
