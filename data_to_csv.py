@@ -6,16 +6,16 @@ import csv
 from tqdm import tqdm
 
 # Make global CSV writers for write_to_csv func
-trainwriter = csv.writer(codecs.open('./Intermediates/wdvc16_train.csv','w','utf8'))
-valwriter = csv.writer(codecs.open('./Intermediates/wdvc16_validation.csv','w','utf8'))
+trainfile = codecs.open('./Intermediates/wdvc16_train.csv','w','utf8')
+trainwriter = csv.writer(trainfile)
+valfile = codecs.open('./Intermediates/wdvc16_validation.csv','w','utf8')
+valwriter = csv.writer(valfile)
 #testwriter = csv.writer(codecs.open('./Intermediates/wdvc16_test.csv','w','utf8'))
 
 # Directories for writing to files
 train_dir = glob('./Train/')
 validation_dir = glob('./Validation/')
 test_dir = glob('./Test/')
-
-
 
 
 
@@ -95,6 +95,16 @@ def is_none(s):
         return s.text
 
 
+def ip_splitter(ip):
+    if not ip:
+        return ''
+    if '.' in ip:
+        return ip.split('.')
+    elif ':' in ip:
+        return ip.split(':')
+    return ip
+
+
 def process_page(page, whichSet):
 	# Join into one string
 	page_string = (''.join(page))
@@ -115,19 +125,30 @@ def process_page(page, whichSet):
 		username = is_none(rev_contributor.find('username'))
 		# If theres no username, then they only have an ip address.
 		if username is '':
+			is_anon = 'T'
 			user_name = ''
 			user_id = ''
 			user_ip = rev_contributor.find('ip').text
+			user_ip_split = ip_splitter(user_ip)
+			user_ip_1 = user_ip_split[0]
+			user_ip_2 = user_ip_split[0] + '_' + user_ip_split[1]
+			user_ip_3 = user_ip_split[0] + '_' + user_ip_split[1] + '_' + user_ip_split[2]
+			user_ip_4 = user_ip_split[0] + '_' + user_ip_split[1] + '_' + user_ip_split[2] + '_' + user_ip_split[3]
 
 		# If theres a username, then they have username and id.
 		else:
+			is_anon = 'F'
 			user_name = is_none(rev_contributor.find('username'))
 			user_id = rev_contributor.find('id').text
 			user_ip = ''
+			user_ip_1 = ''
+			user_ip_2 = ''
+			user_ip_3 = ''
+			user_ip_4 = ''
 		user_name.replace(",", "\,")
 
-		#'REVISION_ID,PAGE_TITLE,USER_NAME,USER_ID,USER_IP,\n'
-		full_row = [ rev_ID, page_title, user_name, user_id, user_ip  ]
+		# [ 'REVISION_ID', 'IS_ANON', 'USER_NAME', 'USER_ID', 'USER_IP_1', 'USER_IP_2', 'USER_IP_3', 'USER_IP_4', ]
+		full_row = [ rev_ID, is_anon, user_name, user_id, user_ip_1, user_ip_2, user_ip_3, user_ip_4  ]
 		# Write to csv file
 		write_to_csv(full_row, whichSet)
 
@@ -163,7 +184,7 @@ def parse_pages(xmlfile, whichSet):
 
 def main():
 	# Wwhat categories were looking for in the xml
-	init_line = [ 'REVISION_ID', 'PAGE_TITLE', 'USER_NAME', 'USER_ID', 'USER_IP' ]
+	init_line = [ 'REVISION_ID', 'IS_ANON', 'USER_NAME', 'USER_ID', 'USER_IP_1', 'USER_IP_2', 'USER_IP_3', 'USER_IP_4', ]
 
 	# Create a csv for each Train, validation, test
 	#Train = 0
@@ -177,6 +198,7 @@ def main():
 		# first lets create the intermediate file 
 		print ('Processing file: %s...' % xml_doc)
 		parse_pages(xml_doc, 0)
+	trainfile.flush()
 	join_csv_files(0)
 
 	#TODO: test
@@ -187,6 +209,7 @@ def main():
 		# first lets create the intermediate file 
 		print ('Processing file: %s...' % xml_doc)
 		parse_pages(xml_doc, 1)
+	valfile.flush()
 	join_csv_files(1)
 
 
