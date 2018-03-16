@@ -11,4 +11,5 @@
 /Intermediates/*.xml
 /Intermediates/*.csv
 
-/models/*
+/tf_models/*
+/sk_models/*
