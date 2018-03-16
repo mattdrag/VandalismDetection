@@ -1,10 +1,11 @@
 # VandalismDetection
 
-CS145 Group Project. Group members: Matt Dragotto, Andy Kuang, Shuhao Sun
+CS145 Group Project. 
+Group members: Matt Dragotto, Andy Kuang, Shuhao Sun
 
 ## Instructions for running the code:
 
-## Depedencies:
+### Depedencies:
 #### For data_to_csv.py: 
 - "codecs": was needed for dealing with unicode characters, 
 - "lxml": was used for parsing the xml into trees
@@ -18,7 +19,7 @@ CS145 Group Project. Group members: Matt Dragotto, Andy Kuang, Shuhao Sun
 - Python version X.X
 - [list dependencies]
 
-## Running the data:
+### Running the data:
 1. Aquire the training, validation, and test data from http://www.wsdm-cup-2017.org/vandalism-detection.html
 
 2. Extract it into their respective directories, named: Train, Validation, and Test
