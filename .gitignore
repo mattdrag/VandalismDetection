@@ -1,0 +1,14 @@
+# gitignore
+/Train/*.xml
+/Train/*.csv
+
+/Validation/*.xml
+/Validation/*.csv
+
+/Test/*.xml
+/Test/*.csv
+
+/Intermediates/*.xml
+/Intermediates/*.csv
+
+/models/*
