@@ -3,114 +3,195 @@ import codecs
 from lxml import etree
 from glob import glob
 import csv
-from unicodecsv import DictWriter
+from tqdm import tqdm
 
-# the file to write to
-outputFile = codecs.open("./Intermediates/output.txt", 'w', 'utf8')
+# Make global CSV writers for write_to_csv func
+trainfile = codecs.open('./Intermediates/wdvc16_train.csv','w','utf8')
+trainwriter = csv.writer(trainfile)
+valfile = codecs.open('./Intermediates/wdvc16_validation.csv','w','utf8')
+valwriter = csv.writer(valfile)
+#testwriter = csv.writer(codecs.open('./Intermediates/wdvc16_test.csv','w','utf8'))
+
+# Directories for writing to files
+train_dir = glob('./Train/')
+validation_dir = glob('./Validation/')
+test_dir = glob('./Test/')
 
 
-def join_csv_files():
-	# just go ahead and nest em bc idgaf
-	with codecs.open("./Intermediates/output.txt", 'r', 'utf8') as outputfile:
-		with codecs.open("./test_data/wdvc16_meta.csv.001", 'r', 'utf8') as metafile:
-			with codecs.open("./test_data/wdvc16_truth.csv.001", 'r', 'utf8') as truthfile:
-				with codecs.open("./Intermediates/output2.txt", 'w', 'utf8') as output2:
+
+
+
+# Open all 3 files and join them
+def join_csv_files(whichSet):
+	#which set tells us which files we are joining
+	#Train
+	if whichSet == 0:
+		features_file = './Intermediates/wdvc16_train.csv'
+		meta_file = './Train/wdvc16_meta.csv'
+		truth_file = './Train/wdvc16_truth.csv'
+		joined_file = './Train/wdvc16_train.csv'
+
+
+	#Validation
+	elif whichSet == 1:
+		features_file = './Intermediates/wdvc16_validation.csv'
+		meta_file = './Validation/wdvc16_2016_03_meta.csv'
+		truth_file = './Validation/wdvc16_2016_03_truth.csv'
+		joined_file = './Validation/wdvc16_validation.csv'
+
+	#Test
+	else: #whichSet == 2
+		features_file = './Intermediates/wdvc16_test.csv'
+		meta_file = './Test/wdvc16_2016_05_meta.csv'
+		truth_file = './Test/wdvc16_2016_05_truth.csv'
+		joined_file = './Test/wdvc16_test.csv'
+
+	#open the three files and write to an output
+	with codecs.open(features_file, 'r', 'utf8') as featuresfile:
+		with codecs.open(meta_file, 'r', 'utf8') as metafile:
+			with codecs.open(truth_file, 'r', 'utf8') as truthfile:
+				with codecs.open(joined_file, 'w', 'utf8') as joinedfile:
 					while True:
-						outputfile_line = outputfile.readline().strip()
+						featuresfile_line = featuresfile.readline().strip()
 						metafile_line = metafile.readline().strip()
+						# We dont need Revision ID
+						meta_pos = metafile_line.find(',')
+						metafile_line_id_removed = metafile_line[meta_pos:]
+
 						truthfile_line = truthfile.readline().strip()
+						# We dont need Revision ID
+						truth_pos = truthfile_line.find(',')
+						truthfile_line_id_removed = truthfile_line[truth_pos:]
 
 						#check if were still reading
-						if outputfile_line:
-							output2_line = outputfile_line + ','+ metafile_line + ',' + truthfile_line
-							output2.write(output2_line + '\n')
-
+						if featuresfile_line:
+							joinedfile_line = featuresfile_line + metafile_line_id_removed + truthfile_line_id_removed + '\n'
+							joinedfile.write(joinedfile_line)
 						#EOF
-						else:
+						else: 
 							break
+						
 
 
-def write_to_csv(data):
-	# Data should be a list of strings
-	csv_formatted = ",".join(data)
-	csv_formatted_n = csv_formatted + '\n'
-	outputFile.write(csv_formatted_n)
+def write_to_csv(row, whichSet):
+	#which set tells us which file to write to
+	#Train
+	if whichSet == 0:
+		trainwriter.writerow(row)
+
+	#Validation
+	elif whichSet == 1:
+		valwriter.writerow(row)
+
+	#Test
+	else: #whichSet == 2
+		testwriter.writerow(row)
 
 
 
-def process_page(page):
+
+def is_none(s):
+    if s is None:
+        return ''
+    else:
+        return s.text
+
+
+def process_page(page, whichSet):
 	# Join into one string
 	page_string = (''.join(page))
 	# A page is a list of lines
 	tree = etree.fromstring(''.join(page))
 
+	# Get the page of the revision
+	page_title = is_none(tree.find('title'))
+
 	# This is where we actually get the data we are looking for and extract it
 	# Grab info for every revision
 	for revision in tree.xpath('./revision'):
-		rev_ID = revision.find('id').text
-		rev_time = revision.find('timestamp').text
-		full_list = [ rev_ID, rev_time ]
+		# Get revision id and title
+		rev_ID = is_none(revision.find('id'))
+
+		# Get user info
+		rev_contributor = revision.find('contributor')
+		username = is_none(rev_contributor.find('username'))
+		# If theres no username, then they only have an ip address.
+		if username is '':
+			user_name = ''
+			user_id = ''
+			user_ip = rev_contributor.find('ip').text
+
+		# If theres a username, then they have username and id.
+		else:
+			user_name = is_none(rev_contributor.find('username'))
+			user_id = rev_contributor.find('id').text
+			user_ip = ''
+		user_name.replace(",", "\,")
+
+		#'REVISION_ID,PAGE_TITLE,USER_NAME,USER_ID,USER_IP,\n'
+		full_row = [ rev_ID, page_title, user_name, user_id, user_ip  ]
 		# Write to csv file
-		write_to_csv(full_list)
+		write_to_csv(full_row, whichSet)
 
 
 
 
 
-def parse_pages(xmlfile):
+def parse_pages(xmlfile, whichSet):
 	# Keep an accumulator 
 	page_buffer = []
 	with codecs.open(xmlfile, 'r', 'utf8') as xml:
 		# Run loop until there are no more lines to be read
-		while True:
-			# Read a line and check that it was successfully read
-			line = xml.readline()
+		for line in tqdm(xml):
+			# Add line to page buffer
+			stripped_line = line.strip()
 
-			if line:
-				# Add line to page buffer
-				stripped_line = line.strip()
+			# We want to skip the beginning of the file
+			if stripped_line == "</siteinfo>":
+				# Clear everything up to the siteinfo end tag
+				page_buffer[:] = []
+				continue
 
-				# We want to skip the beginning of the file
-				if stripped_line == "</siteinfo>":
-					# Clear everything up to the siteinfo end tag
-					page_buffer[:] = []
-					continue
+			page_buffer.append(line.strip())
 
-				page_buffer.append(line.strip())
-
-				# Check if we've reached the end of the page
-				if stripped_line == "</page>":
-					# Process current page
-					print('calling process_page')
-					process_page(page_buffer)
-					# Clear buffer
-					page_buffer[:] = []
-
-			# Theres no more lines in the file
-			else:
-				break
-
+			# Check if we've reached the end of the page
+			if stripped_line == "</page>":
+				# Process current page
+				process_page(page_buffer, whichSet)
+				# Clear buffer
+				page_buffer[:] = []
 
 
 
 def main():
-	# TODO: We have two different directories, test will be used for now and removed later
-	all_xml_docs = glob('../data/wdvc16_*_*.xml')
-	test_xml_docs = glob('./test_data/wdvc16_2012_10_first20krev.xml')
+	# Wwhat categories were looking for in the xml
+	init_line = [ 'REVISION_ID', 'PAGE_TITLE', 'USER_NAME', 'USER_ID', 'USER_IP' ]
 
-	# TODO: Lets determine what categories were looking for in the xml
-	# For that reason I'm just going to leave this here:
-	init_line = 'REVISION_ID,REVISION_TIME\n'
-	outputFile.write(init_line)
+	# Create a csv for each Train, validation, test
+	#Train = 0
+	#Validation = 1
+	#Test = 2
 
-	for xml_doc in test_xml_docs:
-		# first lets create the intermediate file TODO: which we are calling output.txt, and lets get all revisions from all files and combine them into one csv
-		print ('processing file %s...' % xml_doc)
-		parse_pages(xml_doc)
+	#Train:
+	train_files = glob('./Train/*.xml')
+	trainwriter.writerow(init_line)
+	for xml_doc in train_files:
+		# first lets create the intermediate file 
+		print ('Processing file: %s...' % xml_doc)
+		parse_pages(xml_doc, 0)
+	trainfile.flush()
+	join_csv_files(0)
 
-	outputFile.close()
-	# good, we processed all the xml into one big csv. now lets join it with the 
-	join_csv_files()
+	#TODO: test
+	#Validation:
+	val_files = glob('./Validation/*.xml')
+	valwriter.writerow(init_line)
+	for xml_doc in val_files:
+		# first lets create the intermediate file 
+		print ('Processing file: %s...' % xml_doc)
+		parse_pages(xml_doc, 1)
+	valfile.flush()
+	join_csv_files(1)
 
 
 if __name__ == "__main__":
