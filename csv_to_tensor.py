@@ -8,7 +8,7 @@ import shutil
 import sys
 
 import tensorflow as tf
-
+import pandas 
 
 #[ 'REVISION_ID', 'IS_ANON', 'USER_NAME', 'USER_ID', 'USER_IP_1', 'USER_IP_2', 'USER_IP_3', 'USER_IP_4', ],REVISION_SESSION_ID,USER_COUNTRY_CODE,USER_CONTINENT_CODE,USER_TIME_ZONE,USER_REGION_CODE,USER_CITY_NAME,USER_COUNTY_NAME,REVISION_TAGS,ROLLBACK_REVERTED,UNDO_RESTORE_REVERTED
 
@@ -34,7 +34,7 @@ parser.add_argument(
 
 #Gachibass
 parser.add_argument(
-    '--model_type', type=str, default='wide_deep',
+    '--model_type', type=str, default='wide',
     help="Valid model types: {'wide', 'deep', 'wide_deep'}.")
 
 parser.add_argument(
@@ -61,38 +61,45 @@ _NUM_EXAMPLES = {
 }
 
 
-#features - 'rev_id', 'pg_title', 'user_name', 'user_id', 'user_ip',  'revision_session_id', 'user_country_code', 'user_continent_code', 'user_time_zone', 'user_region_code',
-#			'user_city_name'
+#features -     'is_anon', 'user_id', 'user_ip_1', 'user_ip_2', 'user_ip_3', 'user_ip_4',
+#     'user_country_code', 'user_continent_code', 'user_time_zone', 'user_region_code',
+#    'user_city_name', 'user_county_name', 
 def build_model_columns():
   """Builds a set of wide and deep feature columns."""
   # Continuous columns
+
+  df = pandas.read_csv('./Train/wdvc16_train.csv', names=_CSV_COLUMNS )
+
+  is_anon = tf.feature_column.categorical_column_with_vocabulary_list(
+      'is_anon', ['T', 'F'])
   user_id = tf.feature_column.categorical_column_with_hash_bucket(
-      'user_id', hash_bucket_size=1000)
-  revision_session_id = tf.feature_column.categorical_column_with_hash_bucket(
-      'revision_session_id', hash_bucket_size=1000)
-
-  user_ip = tf.feature_column.categorical_column_with_hash_bucket(
-      'user_ip', hash_bucket_size=1000)
+      'user_id', hash_bucket_size=len(df['user_id'].unique()))
+  user_ip_1 = tf.feature_column.categorical_column_with_hash_bucket(
+      'user_ip_1', hash_bucket_size=len(df['user_ip_1'].unique()))
+  user_ip_2 = tf.feature_column.categorical_column_with_hash_bucket(
+      'user_ip_2', hash_bucket_size=len(df['user_ip_2'].unique()))
+  user_ip_3 = tf.feature_column.categorical_column_with_hash_bucket(
+      'user_ip_3', hash_bucket_size=len(df['user_ip_3'].unique()))
+  user_ip_4 = tf.feature_column.categorical_column_with_hash_bucket(
+      'user_ip_4', hash_bucket_size=len(df['user_ip_4'].unique()))
   user_country_code = tf.feature_column.categorical_column_with_hash_bucket(
-      'user_country_code', hash_bucket_size=1000)
+      'user_country_code', hash_bucket_size=len(df['user_country_code'].unique()))
   user_continent_code = tf.feature_column.categorical_column_with_hash_bucket(
-      'user_continent_code', hash_bucket_size=1000)
+      'user_continent_code', hash_bucket_size=len(df['user_continent_code'].unique()))
   user_time_zone = tf.feature_column.categorical_column_with_hash_bucket(
-      'user_time_zone', hash_bucket_size=1000)
+      'user_time_zone', hash_bucket_size=len(df['user_time_zone'].unique()))
   user_region_code = tf.feature_column.categorical_column_with_hash_bucket(
-      'user_region_code', hash_bucket_size=1000)
+      'user_region_code', hash_bucket_size=len(df['user_region_code'].unique()))
   user_city_name = tf.feature_column.categorical_column_with_hash_bucket(
-      'user_city_name', hash_bucket_size=1000)
-
+      'user_city_name', hash_bucket_size=len(df['user_city_name'].unique()))
+  user_county_name = tf.feature_column.categorical_column_with_hash_bucket(
+      'user_county_name', hash_bucket_size=len(df['user_county_name'].unique()))
   # Wide columns and deep columns.
-  base_columns = [ user_ip ]
+  base_columns = [ is_anon, user_id, user_ip_1, user_ip_2, user_ip_3, user_country_code, user_continent_code, user_time_zone, user_region_code, user_city_name, user_county_name ]
 
   wide_columns = base_columns
 
   deep_columns = [
-      user_id,
-      revision_session_id,
-      tf.feature_column.indicator_column(user_ip),
   ]
 
   return wide_columns, deep_columns
