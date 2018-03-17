@@ -20,6 +20,7 @@ import numpy as np
 from time import time
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
 import sklearn.metrics as sk_metric
 
 #reading the data
@@ -27,12 +28,14 @@ df_train = pd.read_csv('./Train/wdvc16_train.csv', dtype={'REVISION_ID': object,
 	'PAGE_TITLE': object, 'USER_NAME': object, 'USER_ID': object, \
 	'USER_IP': object, 'REVISION_SESSION_ID': object, 'USER_COUNTRY_CODE': object, \
 	'USER_CONTINENT_CODE': object, 'USER_TIME_ZONE': object, 'USER_REGION_CODE': object, \
-	'USER_CITY_NAME': object, 'USER_COUNTY_NAME': object, })
+	'USER_CITY_NAME': object, 'USER_COUNTY_NAME': object, 'REVISION_TAGS': object, \
+	'ROLLBACK_REVERTED': object ,'UNDO_RESTORE_REVERTED': object })
 df_validation = pd.read_csv('./Validation/wdvc16_validation.csv', dtype={'REVISION_ID': object, \
 	'PAGE_TITLE': object, 'USER_NAME': object, 'USER_ID': object, \
 	'USER_IP': object, 'REVISION_SESSION_ID': object, 'USER_COUNTRY_CODE': object, \
 	'USER_CONTINENT_CODE': object, 'USER_TIME_ZONE': object, 'USER_REGION_CODE': object, \
-	'USER_CITY_NAME': object, 'USER_COUNTY_NAME': object, })
+	'USER_CITY_NAME': object, 'USER_COUNTY_NAME': object, 'REVISION_TAGS': object, \
+	'ROLLBACK_REVERTED': object ,'UNDO_RESTORE_REVERTED': object })
 #remove NaN in datatrame
 df_train = df_train.fillna('')
 df_validation = df_validation.fillna('')
@@ -104,7 +107,7 @@ y_validation = df_validation.ROLLBACK_REVERTED.values
 
 t = time()
 #train
-clf = LinearSVC(dual=False)
+clf=SVC(kernel='linear',probability=True, C=0.001)
 clf.fit(X_train, y_train)
 
 #get the score
