@@ -1,0 +1,18 @@
+small dataset LinearSVC: 
+  C = 1Time used: 95.90s, ROC_AUC=0.806970, ACCURACY=0.998508
+  with 5times features: Time used: 302.83s, ROC_AUC=0.811228, ACCURACY=0.998508
+  C=0.5 Time used: 38.92s, ROC_AUC=0.807052, ACCURACY=0.998508
+  C=0.1 Time used: 23.08s, ROC_AUC=0.807475, ACCURACY=0.998508
+  C=5 Time used: 222.12s, ROC_AUC=0.806233, ACCURACY=0.998508
+  C = 0.01 Time used: 13.96s, ROC_AUC=0.818697, ACCURACY=0.998508
+  *C = 0.001 Time used: 9.75s, ROC_AUC=0.831132, ACCURACY=0.998508
+  C = 0.0001 Time used: 6.71s, ROC_AUC=0.830820, ACCURACY=0.998508
+ 
+small set SVC with linear kernel:
+ C = 1 Time used: 72.12s, ROC_AUC=0.873228, ACCURACY=0.998508
+ C = 0.001Time used: 63.76s, ROC_AUC=0.873797, ACCURACY=0.998508
+large dataset LinearSVC: 
+ C = 1 Time used: 4314.51s, ROC_AUC=0.838248, ACCURACY=0.998252
+ C = 0.001 Time used: 2077.74s, ROC_AUC=0.823285, ACCURACY=0.998505 
+large dataset SVC: 
+C = 0.001

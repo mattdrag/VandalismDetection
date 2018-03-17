@@ -65,10 +65,10 @@ def join_csv_files(whichSet):
 						if featuresfile_line:
 							joinedfile_line = featuresfile_line + metafile_line_id_removed + truthfile_line_id_removed + '\n'
 							joinedfile.write(joinedfile_line)
-
 						#EOF
-						else:
+						else: 
 							break
+						
 
 
 def write_to_csv(row, whichSet):
